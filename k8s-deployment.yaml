@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-webapp
+  labels:
+    app: todo-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-webapp
+  template:
+    metadata:
+      labels:
+        app: todo-webapp
+    spec:
+      containers:
+      - name: todo-webapp
+        image: registry.digitalocean.com/xask00/todo-webapp:v2
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5 
