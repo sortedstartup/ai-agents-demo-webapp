@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List - HTMX</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto max-w-2xl px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Todo List</h1>
+            <p class="text-gray-600">Keep track of your tasks with this simple todo app</p>
+        </div>
+
+        <!-- Add Todo Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <form hx-post="/todos/add" 
+                  hx-target="#todo-list" 
+                  hx-swap="innerHTML"
+                  class="flex gap-3">
+                <input type="text" 
+                       name="text" 
+                       placeholder="What needs to be done?" 
+                       required
+                       class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       autocomplete="off">
+                <button type="submit" 
+                        class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                    Add Todo
+                </button>
+            </form>
+        </div>
+
+        <!-- Todo List Container -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div id="todo-list">
+                {{template "todos.html" .}}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+            <p>Built with HTMX, Go, and Tailwind CSS</p>
+        </div>
+    </div>
+
+    <script>
+        // Clear the input after successful form submission
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.xhr.status === 200 && evt.detail.elt.tagName === 'FORM') {
+                evt.detail.elt.reset();
+            }
+        });
+    </script>
+</body>
+</html> 

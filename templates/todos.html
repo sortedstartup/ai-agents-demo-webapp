@@ -1,0 +1,47 @@
+{{if .Todos}}
+    <div class="divide-y divide-gray-200">
+        {{range .Todos}}
+        <div class="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center space-x-3 flex-1">
+                <button hx-post="/todos/toggle/{{.ID}}" 
+                        hx-target="#todo-list" 
+                        hx-swap="innerHTML"
+                        class="flex-shrink-0 w-5 h-5 rounded-full border-2 {{if .Completed}}bg-green-500 border-green-500{{else}}border-gray-300 hover:border-green-400{{end}} transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    {{if .Completed}}
+                        <svg class="w-3 h-3 text-white mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    {{end}}
+                </button>
+                <span class="flex-1 text-gray-900 {{if .Completed}}line-through text-gray-500{{end}}">
+                    {{.Text}}
+                </span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-400">
+                    {{.CreatedAt.Format "Jan 2, 15:04"}}
+                </span>
+                <button hx-delete="/todos/delete/{{.ID}}" 
+                        hx-target="#todo-list" 
+                        hx-swap="innerHTML"
+                        hx-confirm="Are you sure you want to delete this todo?"
+                        class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        {{end}}
+    </div>
+{{else}}
+    <div class="p-12 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No todos yet</h3>
+        <p class="text-gray-500">Add your first todo to get started!</p>
+    </div>
+{{end}} 
