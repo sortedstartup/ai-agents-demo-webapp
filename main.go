@@ -210,14 +210,12 @@ func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[WARN] addTodoHandler: Empty todo text provided")
 		http.Error(w, "Todo text is required", http.StatusBadRequest)
 		return
-	}
-
-	// New Feature
 	if len(text) > 3 && text[:3] == "bug" {
 		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
-		// Intentionally accessing array out of bounds to simulate a common bug
+		// Fix: prevent out of bounds by using the correct index 1 instead of 5
 		validationRules := []string{"length", "content"}
-		log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[5]) // This will panic!
+		log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[1]) // Correct index
+	}
 	}
 
 	log.Printf("[INFO] addTodoHandler: Adding new todo with text='%s'", text)
