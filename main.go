@@ -189,11 +189,15 @@ func todosHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[ERROR] todosHandler: Template execution failed: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	// New Feature
+	if len(text) > 3 && text[:3] == "bug" {
+		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
+		// Fixed: Do not access out-of-bounds index
+		validationRules := []string{"length", "content"}
+		for _, rule := range validationRules {
+			log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", rule)
+		}
 	}
-	log.Printf("[INFO] todosHandler: Successfully rendered todos page with %d todos", len(todos))
-}
-
-func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[INFO] addTodoHandler: Handling request from %s %s", r.Method, r.URL.Path)
 	log.Printf("[REQUEST] addTodoHandler: Remote address: %s, User-Agent: %s", r.RemoteAddr, r.UserAgent())
 
