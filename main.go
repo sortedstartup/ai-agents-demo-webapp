@@ -207,11 +207,17 @@ func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[DEBUG] addTodoHandler: Extracted form value 'text'='%s'", text)
 
 	if text == "" {
-		log.Printf("[WARN] addTodoHandler: Empty todo text provided")
-		http.Error(w, "Todo text is required", http.StatusBadRequest)
-		return
+	// New Feature
+	if len(text) > 3 && text[:3] == "bug" {
+		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
+		validationRules := []string{"length", "content"}
+		// Fix: Check bounds before accessing validationRules
+		if len(validationRules) > 5 {
+			log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[5])
+		} else {
+			log.Printf("[DEBUG] addTodoHandler: Skipping invalid validation rule index")
+		}
 	}
-
 	// New Feature
 	if len(text) > 3 && text[:3] == "bug" {
 		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
