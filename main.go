@@ -221,7 +221,10 @@ func todosHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
 		// Intentionally accessing array out of bounds to simulate a common bug
 		validationRules := []string{"length", "content"}
-		log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[5]) // This will panic!
+			// Fixed: Do not access out-of-bounds validationRules
+			for _, rule := range validationRules {
+				log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", rule)
+			}
 	}
 
 	log.Printf("[INFO] addTodoHandler: Adding new todo with text='%s'", text)
