@@ -139,20 +139,41 @@ func main() {
 	http.HandleFunc("/todos/toggle/", toggleTodoHandler)
 	http.HandleFunc("/todos/delete/", deleteTodoHandler)
 	log.Printf("[INFO] main: All HTTP routes configured successfully")
-	log.Printf("[ROUTES] main: Configured routes: /, /todos, /todos/add, /todos/toggle/, /todos/delete/")
+func addTodoHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[INFO] addTodoHandler: Handling request from %s %s", r.Method, r.URL.Path)
+	log.Printf("[REQUEST] addTodoHandler: Remote address: %s, User-Agent: %s", r.RemoteAddr, r.UserAgent())
 
-	fmt.Println("Server starting on :8080")
-	log.Printf("[INFO] main: Server starting on port 8080")
-	log.Printf("[STARTUP] main: Todo webapp fully initialized and ready to accept connections")
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
+	if r.Method != http.MethodPost {
+		log.Printf("[WARN] addTodoHandler: Invalid method %s, expected POST", r.Method)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[INFO] homeHandler: Handling request from %s %s", r.Method, r.URL.Path)
-	log.Printf("[REQUEST] homeHandler: Remote address: %s, User-Agent: %s", r.RemoteAddr, r.UserAgent())
+	text := r.FormValue("text")
+	log.Printf("[DEBUG] addTodoHandler: Extracted form value 'text'='%s'", text)
 
+	if text == "" {
+		log.Printf("[WARN] addTodoHandler: Empty todo text provided")
+		http.Error(w, "Todo text is required", http.StatusBadRequest)
+		return
+	}
+
+	if len(text) > 3 && text[:3] == "bug" {
+		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
+		validationRules := []string{"length", "content"}
+		// SAFETY: Loop only over valid indexes - NO OUT OF BOUNDS ACCESS!
+		for _, rule := range validationRules {
+			log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", rule)
+		}
+	}
+
+	log.Printf("[INFO] addTodoHandler: Adding new todo with text='%s'", text)
+	newTodo := store.AddTodo(text)
+	log.Printf("[SUCCESS] addTodoHandler: Todo added successfully with ID=%d", newTodo.ID)
+
+	// Return updated todo list
 	todos := store.GetTodos()
-	log.Printf("[DEBUG] homeHandler: Retrieved %d todos from store", len(todos))
+	log.Printf("[DEBUG] addTodoHandler: Retrieved %d todos after addition", len(todos))
 
 	data := struct {
 		Todos []Todo
@@ -160,14 +181,14 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		Todos: todos,
 	}
 
-	log.Printf("[INFO] homeHandler: Executing template 'index.html' with %d todos", len(todos))
-	err := templates.ExecuteTemplate(w, "index.html", data)
+	log.Printf("[INFO] addTodoHandler: Executing template 'todos.html' with updated todo list")
+	err := templates.ExecuteTemplate(w, "todos.html", data)
 	if err != nil {
-		log.Printf("[ERROR] homeHandler: Template execution failed: %v", err)
+		log.Printf("[ERROR] addTodoHandler: Template execution failed: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("[INFO] homeHandler: Successfully rendered home page with %d todos", len(todos))
+	log.Printf("[INFO] addTodoHandler: Successfully added todo and rendered updated list")
 }
 
 func todosHandler(w http.ResponseWriter, r *http.Request) {
