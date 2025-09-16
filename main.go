@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -213,11 +214,21 @@ func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// New Feature
-	if len(text) > 3 && text[:3] == "bug" {
+	if len(text) > 3 && strings.HasPrefix(text, "bug") {
 		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
-		// Intentionally accessing array out of bounds to simulate a common bug
+		// Use safe validation handling to avoid out-of-bounds access
 		validationRules := []string{"length", "content"}
-		log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[5]) // This will panic!
+		if len(validationRules) == 0 {
+			log.Printf("[DEBUG] addTodoHandler: No validation rules configured")
+		} else {
+			for idx, rule := range validationRules {
+				log.Printf("[DEBUG] addTodoHandler: Applying validation rule %d: %s", idx, rule)
+				// Example rule checks (non-blocking):
+				if rule == "length" && len(text) < 5 {
+					log.Printf("[WARN] addTodoHandler: Text too short for 'length' rule: %d characters", len(text))
+				}
+			}
+		}
 	}
 
 	log.Printf("[INFO] addTodoHandler: Adding new todo with text='%s'", text)
