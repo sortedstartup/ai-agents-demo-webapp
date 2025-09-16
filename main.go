@@ -148,6 +148,30 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
+// parseIDFromPath safely extracts an integer ID from the request path using a prefix.
+// It avoids slicing beyond the length of the path and returns a helpful error when
+// the path does not contain a valid ID.
+func parseIDFromPath(path, prefix string) (int, error) {
+	// Trim any trailing slash to normalize
+	normalized := strings.TrimSuffix(path, "/")
+	// Use TrimPrefix which is safe and won't panic
+	idStr := strings.TrimPrefix(normalized, prefix)
+	// If TrimPrefix didn't remove the prefix, the request path is malformed
+	if idStr == normalized {
+		return 0, fmt.Errorf("path does not contain expected prefix '%s'", prefix)
+	}
+	// After trimming, the idStr should not be empty
+	if idStr == "" {
+		return 0, fmt.Errorf("no ID found in path after prefix '%s'", prefix)
+	}
+	// Finally, parse the integer
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid ID '%s': %v", idStr, err)
+	}
+	return id, nil
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[INFO] homeHandler: Handling request from %s %s", r.Method, r.URL.Path)
 	log.Printf("[REQUEST] homeHandler: Remote address: %s, User-Agent: %s", r.RemoteAddr, r.UserAgent())
@@ -265,13 +289,10 @@ func toggleTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract ID from URL path
-	idStr := r.URL.Path[len("/todos/toggle/"):]
-	log.Printf("[DEBUG] toggleTodoHandler: Extracted ID string='%s' from URL path", idStr)
-
-	id, err := strconv.Atoi(idStr)
+	// Safely extract ID from URL path
+	id, err := parseIDFromPath(r.URL.Path, "/todos/toggle/")
 	if err != nil {
-		log.Printf("[ERROR] toggleTodoHandler: Failed to parse ID '%s': %v", idStr, err)
+		log.Printf("[ERROR] toggleTodoHandler: %v", err)
 		http.Error(w, "Invalid todo ID", http.StatusBadRequest)
 		return
 	}
@@ -316,13 +337,10 @@ func deleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract ID from URL path
-	idStr := r.URL.Path[len("/todos/delete/"):]
-	log.Printf("[DEBUG] deleteTodoHandler: Extracted ID string='%s' from URL path", idStr)
-
-	id, err := strconv.Atoi(idStr)
+	// Safely extract ID from URL path
+	id, err := parseIDFromPath(r.URL.Path, "/todos/delete/")
 	if err != nil {
-		log.Printf("[ERROR] deleteTodoHandler: Failed to parse ID '%s': %v", idStr, err)
+		log.Printf("[ERROR] deleteTodoHandler: %v", err)
 		http.Error(w, "Invalid todo ID", http.StatusBadRequest)
 		return
 	}
