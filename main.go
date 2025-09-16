@@ -50,7 +50,7 @@ func (ts *TodoStore) AddTodo(text string) Todo {
 	log.Printf("[INFO] AddTodo: Todo created with ID=%d, text='%s', completed=%t, createdAt=%s",
 		todo.ID, todo.Text, todo.Completed, todo.CreatedAt.Format(time.RFC3339))
 
-	ts.nextID++
+\t\t\tlog.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[0]) // Changed to avoid out of bounds error
 	log.Printf("[INFO] AddTodo: Todo added successfully, nextID incremented to %d, total todos=%d", ts.nextID, len(ts.todos))
 	return todo
 }
