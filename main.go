@@ -149,21 +149,30 @@ func main() {
 }
 
 // parseIDFromPath safely extracts an integer ID from the request path using a prefix.
-// It avoids slicing beyond the length of the path and returns a helpful error when
-// the path does not contain a valid ID.
+// This implementation is defensive against out-of-bounds slicing by using
+// strings.HasPrefix and TrimPrefix. It tolerates prefixes that may or may not
+// include a trailing slash and provides clear error messages when parsing fails.
 func parseIDFromPath(path, prefix string) (int, error) {
-	// Trim any trailing slash to normalize
+	// Normalize: remove any trailing slash from the path
 	normalized := strings.TrimSuffix(path, "/")
-	// Use TrimPrefix which is safe and won't panic
-	idStr := strings.TrimPrefix(normalized, prefix)
-	// If TrimPrefix didn't remove the prefix, the request path is malformed
-	if idStr == normalized {
+
+	// Ensure prefix ends without a trailing slash for consistent checks
+	cleanPrefix := strings.TrimSuffix(prefix, "/")
+
+	// Check that normalized path actually contains the expected prefix
+	if !strings.HasPrefix(normalized, cleanPrefix) {
 		return 0, fmt.Errorf("path does not contain expected prefix '%s'", prefix)
 	}
-	// After trimming, the idStr should not be empty
+
+	// Extract the substring after the prefix. This avoids any direct indexing.
+	idStr := strings.TrimPrefix(normalized, cleanPrefix)
+	// Trim any leading slash from the extracted id portion
+	idStr = strings.TrimPrefix(idStr, "/")
+
 	if idStr == "" {
 		return 0, fmt.Errorf("no ID found in path after prefix '%s'", prefix)
 	}
+
 	// Finally, parse the integer
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
