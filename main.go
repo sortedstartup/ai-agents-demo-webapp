@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -147,6 +148,39 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
+// parseIDFromPath safely extracts an integer ID from the request path using a prefix.
+// This implementation is defensive against out-of-bounds slicing by using
+// strings.HasPrefix and TrimPrefix. It tolerates prefixes that may or may not
+// include a trailing slash and provides clear error messages when parsing fails.
+func parseIDFromPath(path, prefix string) (int, error) {
+	// Normalize: remove any trailing slash from the path
+	normalized := strings.TrimSuffix(path, "/")
+
+	// Ensure prefix ends without a trailing slash for consistent checks
+	cleanPrefix := strings.TrimSuffix(prefix, "/")
+
+	// Check that normalized path actually contains the expected prefix
+	if !strings.HasPrefix(normalized, cleanPrefix) {
+		return 0, fmt.Errorf("path does not contain expected prefix '%s'", prefix)
+	}
+
+	// Extract the substring after the prefix. This avoids any direct indexing.
+	idStr := strings.TrimPrefix(normalized, cleanPrefix)
+	// Trim any leading slash from the extracted id portion
+	idStr = strings.TrimPrefix(idStr, "/")
+
+	if idStr == "" {
+		return 0, fmt.Errorf("no ID found in path after prefix '%s'", prefix)
+	}
+
+	// Finally, parse the integer
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid ID '%s': %v", idStr, err)
+	}
+	return id, nil
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[INFO] homeHandler: Handling request from %s %s", r.Method, r.URL.Path)
 	log.Printf("[REQUEST] homeHandler: Remote address: %s, User-Agent: %s", r.RemoteAddr, r.UserAgent())
@@ -213,11 +247,21 @@ func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// New Feature
-	if len(text) > 3 && text[:3] == "bug" {
+	if len(text) > 3 && strings.HasPrefix(text, "bug") {
 		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
-		// Intentionally accessing array out of bounds to simulate a common bug
+		// Use safe validation handling to avoid out-of-bounds access
 		validationRules := []string{"length", "content"}
-		log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[5]) // This will panic!
+		if len(validationRules) == 0 {
+			log.Printf("[DEBUG] addTodoHandler: No validation rules configured")
+		} else {
+			for idx, rule := range validationRules {
+				log.Printf("[DEBUG] addTodoHandler: Applying validation rule %d: %s", idx, rule)
+				// Example rule checks (non-blocking):
+				if rule == "length" && len(text) < 5 {
+					log.Printf("[WARN] addTodoHandler: Text too short for 'length' rule: %d characters", len(text))
+				}
+			}
+		}
 	}
 
 	log.Printf("[INFO] addTodoHandler: Adding new todo with text='%s'", text)
@@ -254,13 +298,10 @@ func toggleTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract ID from URL path
-	idStr := r.URL.Path[len("/todos/toggle/"):]
-	log.Printf("[DEBUG] toggleTodoHandler: Extracted ID string='%s' from URL path", idStr)
-
-	id, err := strconv.Atoi(idStr)
+	// Safely extract ID from URL path
+	id, err := parseIDFromPath(r.URL.Path, "/todos/toggle/")
 	if err != nil {
-		log.Printf("[ERROR] toggleTodoHandler: Failed to parse ID '%s': %v", idStr, err)
+		log.Printf("[ERROR] toggleTodoHandler: %v", err)
 		http.Error(w, "Invalid todo ID", http.StatusBadRequest)
 		return
 	}
@@ -305,13 +346,10 @@ func deleteTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract ID from URL path
-	idStr := r.URL.Path[len("/todos/delete/"):]
-	log.Printf("[DEBUG] deleteTodoHandler: Extracted ID string='%s' from URL path", idStr)
-
-	id, err := strconv.Atoi(idStr)
+	// Safely extract ID from URL path
+	id, err := parseIDFromPath(r.URL.Path, "/todos/delete/")
 	if err != nil {
-		log.Printf("[ERROR] deleteTodoHandler: Failed to parse ID '%s': %v", idStr, err)
+		log.Printf("[ERROR] deleteTodoHandler: %v", err)
 		http.Error(w, "Invalid todo ID", http.StatusBadRequest)
 		return
 	}
