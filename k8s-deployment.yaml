@@ -17,6 +17,10 @@ spec:
       containers:
       - name: todo-webapp
         image: registry.digitalocean.com/xask00/todo-webapp:v2
+        terminationGracePeriodSeconds: 30
+        env:
+        - name: ENVIRONMENT
+          value: production
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
