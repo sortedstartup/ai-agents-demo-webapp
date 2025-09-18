@@ -9,18 +9,25 @@ spec:
   selector:
     matchLabels:
       app: todo-webapp
-  template:
-    metadata:
-      labels:
-        app: todo-webapp
-    spec:
-      containers:
       - name: todo-webapp
         image: registry.digitalocean.com/xask00/todo-webapp:v2
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
         livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 3
           httpGet:
             path: /
             port: 8080
