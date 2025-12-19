@@ -105,14 +105,14 @@ func (ts *TodoStore) DeleteTodo(id int) bool {
 	log.Printf("[INFO] DeleteTodo: Starting to delete todo with ID=%d", id)
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	log.Printf("[DEBUG] DeleteTodo: Acquired lock, searching among %d todos", len(ts.todos))
-
-	for i, todo := range ts.todos {
-		if todo.ID == id {
-			log.Printf("[INFO] DeleteTodo: Found todo to delete: ID=%d, text='%s', completed=%t",
-				todo.ID, todo.Text, todo.Completed)
-			ts.todos = append(ts.todos[:i], ts.todos[i+1:]...)
-			log.Printf("[INFO] DeleteTodo: Successfully deleted todo ID=%d, remaining todos=%d", id, len(ts.todos))
+	// New Feature: special handling for todos starting with 'bug'
+	if len(text) >= 3 && text[:3] == "bug" {
+		log.Printf("[DEBUG] addTodoHandler: Applying special validation for text starting with 'bug'")
+		validationRules := []string{"length", "content"}
+		for _, rule := range validationRules {
+			log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", rule)
+		}
+	}
 			log.Printf("[OPERATION] DeleteTodo: Deleted todo '%s' (ID=%d)", todo.Text, id)
 			return true
 		}
