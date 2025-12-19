@@ -120,13 +120,44 @@ func (ts *TodoStore) DeleteTodo(id int) bool {
 }
 
 var store = NewTodoStore()
-var templates = template.Must(template.ParseGlob("templates/*.html"))
+var templates *template.Template
+
+func initTemplates() {
+	log.Printf("[INFO] initTemplates: Parsing templates from templates/*.html")
+	t, err := template.ParseGlob("templates/*.html")
+	if err != nil {
+		// Instead of panicking (template.Must), log and create fallback templates so the server remains healthy
+		log.Printf("[ERROR] initTemplates: failed to parse templates: %v", err)
+		log.Printf("[WARN] initTemplates: creating fallback minimal templates to ensure /healthz and root work")
+
+		// Fallback templates embedded inline to prevent runtime 500 on / when files are missing
+		t = template.New("fallback")
+		_, err = t.New("index.html").Parse(`<!doctype html><html><head><meta charset="utf-8"><title>Todo</title></head><body><div id="todo-list">{{template "todos.html" .}}</div></body></html>`)
+		if err != nil {
+			log.Printf("[ERROR] initTemplates: failed to create fallback index template: %v", err)
+		}
+		_, err = t.New("todos.html").Parse(`{{if .Todos}}<ul>{{range .Todos}}<li>{{.Text}}</li>{{end}}</ul>{{else}}<p>No todos</p>{{end}}`)
+		if err != nil {
+			log.Printf("[ERROR] initTemplates: failed to create fallback todos template: %v", err)
+		}
+	}
+	templates = t
+	log.Printf("[INFO] initTemplates: templates initialized successfully")
+}
 
 func main() {
 	log.Printf("[INFO] main: Starting Todo webapp server")
+	initTemplates()
 	log.Printf("[INFO] main: Initializing routes and static file server")
 
-	// Serve static files
+	// Health endpoint for Kubernetes probes
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+	log.Printf("[INFO] main: Health endpoint /healthz configured")
+
+	// Serve static files (if present)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
 	log.Printf("[INFO] main: Static file server configured for /static/ path")
 
@@ -136,8 +167,8 @@ func main() {
 	http.HandleFunc("/todos/add", addTodoHandler)
 	http.HandleFunc("/todos/toggle/", toggleTodoHandler)
 	http.HandleFunc("/todos/delete/", deleteTodoHandler)
-	log.Printf("[INFO] main: All HTTP routes configured successfully")
-	log.Printf("[ROUTES] main: Configured routes: /, /todos, /todos/add, /todos/toggle/, /todos/delete/")
+	log.Printf("[INFO] main: All HTTP routes configured successfully")	
+	log.Printf("[ROUTES] main: Configured routes: /, /todos, /todos/add, /todos/toggle/, /todos/delete/, /healthz")
 
 	fmt.Println("Server starting on :8080")
 	log.Printf("[INFO] main: Server starting on port 8080")
