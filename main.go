@@ -105,14 +105,12 @@ func (ts *TodoStore) DeleteTodo(id int) bool {
 	log.Printf("[INFO] DeleteTodo: Starting to delete todo with ID=%d", id)
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	// New Feature: special handling for todos starting with 'bug'
-	if len(text) >= 3 && text[:3] == "bug" {
-		log.Printf("[DEBUG] addTodoHandler: Applying special validation for text starting with 'bug'")
-		validationRules := []string{"length", "content"}
-		for _, rule := range validationRules {
-			log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", rule)
-		}
-	}
+	log.Printf("[DEBUG] DeleteTodo: Acquired lock, searching among %d todos", len(ts.todos))
+
+	for i, todo := range ts.todos {
+		if todo.ID == id {
+			// Remove the todo from the slice while preserving order
+			ts.todos = append(ts.todos[:i], ts.todos[i+1:]...)
 			log.Printf("[OPERATION] DeleteTodo: Deleted todo '%s' (ID=%d)", todo.Text, id)
 			return true
 		}
@@ -212,12 +210,14 @@ func addTodoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// New Feature
-	if len(text) > 3 && text[:3] == "bug" {
+	// Special handling for todos starting with 'bug' (fixed to avoid panics)
+	if len(text) >= 3 && text[:3] == "bug" {
 		log.Printf("[DEBUG] addTodoHandler: Processing special validation for text starting with 'bug'")
-		// Intentionally accessing array out of bounds to simulate a common bug
 		validationRules := []string{"length", "content"}
-		log.Printf("[DEBUG] addTodoHandler: Applying validation rule: %s", validationRules[5]) // This will panic!
+		// Safe iteration over validation rules instead of accessing out-of-bounds index
+		for i, rule := range validationRules {
+			log.Printf("[DEBUG] addTodoHandler: Applying validation rule %d: %s", i, rule)
+		}
 	}
 
 	log.Printf("[INFO] addTodoHandler: Adding new todo with text='%s'", text)
